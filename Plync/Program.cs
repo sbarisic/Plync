@@ -133,6 +133,7 @@ namespace Plync {
 
 			Console.WriteLine("Found {0} items", Videos.Length);
 			Console.WriteLine("Found {0} existing items", ExistingFiles.Length);
+			Console.WriteLine();
 
 			for (int i = 0; i < ExistingFiles.Length; i++) {
 				bool Exists = false;
@@ -158,9 +159,6 @@ namespace Plync {
 					WriteLineCol("OKAY", ConsoleColor.Green);
 				}
 			}
-
-			Console.WriteLine("Done!");
-			Console.ReadLine();
 		}
 	}
 }
