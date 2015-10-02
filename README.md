@@ -1,0 +1,2 @@
+# Plync
+Youtube playlist synchroniser
