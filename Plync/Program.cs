@@ -34,6 +34,8 @@ namespace Plync {
 			ApplicationName = "Plync"
 		});
 		static int Top, Left;
+		static bool Video;
+		static string Ext;
 
 		static T[] Concat<T>(T[] A, T[] B) {
 			T[] Ret = new T[A.Length + B.Length];
@@ -59,16 +61,32 @@ namespace Plync {
 			if (string.IsNullOrEmpty(Name))
 				Name = Vid.Title;
 
-			AudioDownloader DL = new AudioDownloader(Vid, Path.Combine(Dir, Name + Vid.AudioExtension));
-			DL.DownloadProgressChanged += (S, A) => {
-				LoadCursor();
-				Console.Write(PercFmt, Math.Round(A.ProgressPercentage * 0.85));
-			};
-			DL.AudioExtractionProgressChanged += (S, A) => {
-				LoadCursor();
-				Console.Write(PercFmt, Math.Round(85 + A.ProgressPercentage * 0.15));
-			};
-			DL.Execute();
+			Downloader DLoader = null;
+			string SavePath = Path.Combine(Dir, Name + Ext);
+
+			if (Video) {
+				VideoDownloader DL = new VideoDownloader(Vid, SavePath);
+				DLoader = DL;
+
+				DL.DownloadProgressChanged += (S, A) => {
+					LoadCursor();
+					Console.Write(PercFmt, Math.Round(A.ProgressPercentage));
+				};
+			} else {
+				AudioDownloader DL = new AudioDownloader(Vid, SavePath);
+				DLoader = DL;
+
+				DL.DownloadProgressChanged += (S, A) => {
+					LoadCursor();
+					Console.Write(PercFmt, Math.Round(A.ProgressPercentage * 0.85));
+				};
+				DL.AudioExtractionProgressChanged += (S, A) => {
+					LoadCursor();
+					Console.Write(PercFmt, Math.Round(85 + A.ProgressPercentage * 0.15));
+				};
+			}
+
+			DLoader.Execute();
 		}
 
 		static YTVideo[] GetPlaylistItems(string Playlist, string NextPageToken = null) {
@@ -113,23 +131,38 @@ namespace Plync {
 		}
 
 		static void Main(string[] args) {
-			//args = new[] { "https://www.youtube.com/playlist?list=PLVXfLTTzCNTO4h83ThA-UOUcy2tgSrf-e", "testdir" };
 			Console.Title = "Plync";
 
-			if (args.Length != 2) {
-				Console.WriteLine("Usage: plync playlist directory");
-				Environment.Exit(1);
+			if (!(args.Length == 2 || (args.Length == 3 && args[2] == "/vid"))) {
+				Console.WriteLine("Usage: plync playlist directory [/vid]");
+				Environment.Exit(-1);
+			}
+
+			Video = (args.Length == 3 && args[2] == "/vid");
+			if (Video) {
+				Ext = ".mp4";
+				Console.WriteLine("Fetching audio and video");
+			} else {
+				Ext = ".mp3";
+				Console.WriteLine("Fetching audio only");
 			}
 
 			string PlaylistID = GetPlaylistID(args[0]);
 			Console.Write("Fetching items from {0} ... ", PlaylistID);
-			YTVideo[] Videos = GetPlaylistItems(PlaylistID);
-			Console.WriteLine("OKAY");
+			SaveCursor();
+			YTVideo[] Videos = null;
+			try {
+				Videos = GetPlaylistItems(PlaylistID);
+				WriteLineCol("OKAY", ConsoleColor.Green);
+			} catch (Exception) {
+				WriteLineCol("FAIL", ConsoleColor.Red);
+				Environment.Exit(-1);
+			}
 
 			string Dir = Path.GetFullPath(args[1]);
 			if (!Directory.Exists(Dir))
 				Directory.CreateDirectory(Dir);
-			string[] ExistingFiles = Directory.GetFiles(Dir, "*.mp3");
+			string[] ExistingFiles = Directory.GetFiles(Dir, "*" + Ext);
 
 			Console.WriteLine("Found {0} items", Videos.Length);
 			Console.WriteLine("Found {0} existing items", ExistingFiles.Length);
@@ -148,16 +181,31 @@ namespace Plync {
 				}
 			}
 
+			int Downloaded = 0;
+			int Failed = 0;
+
 			for (int i = 0; i < Videos.Length; i++) {
 				Console.Write("Fetching \"{0}\" ... ", Videos[i].Title);
 				SaveCursor();
 
-				if (File.Exists(Path.Combine(Dir, Videos[i].Title + ".mp3")))
+				if (File.Exists(Path.Combine(Dir, Videos[i].Title + Ext)))
 					WriteLineCol("SKIP", ConsoleColor.Yellow);
 				else {
-					Download(Videos[i].Link, args[1], Videos[i].Title);
-					WriteLineCol("OKAY", ConsoleColor.Green);
+					try {
+						Download(Videos[i].Link, args[1], Videos[i].Title);
+						WriteLineCol("OKAY", ConsoleColor.Green);
+						Downloaded++;
+					} catch (Exception) {
+						WriteLineCol("FAIL", ConsoleColor.Red);
+						Failed++;
+					}
 				}
+			}
+
+			Console.WriteLine("Fetched {0} items", Downloaded);
+			if (Failed > 0) {
+				Console.WriteLine("Failed to fetch {0} items", Failed);
+				Environment.Exit(Failed);
 			}
 		}
 	}
