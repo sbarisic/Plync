@@ -44,6 +44,16 @@ namespace Plync {
 			return Ret;
 		}
 
+		static string NormalizeTitle(string Title) {
+			if (Title == null)
+				return null;
+			string Name = "";
+			for (int i = 0; i < Title.Length; i++)
+				if (!Path.GetInvalidPathChars().Contains(Title[i]))
+					Name += Title[i];
+			return Name;
+		}
+
 		static void Download(string Path, string Dir = null, string Name = null) {
 			Download(DownloadUrlResolver.GetDownloadUrls(Path, false).ToArray(), Dir, Name);
 		}
@@ -59,12 +69,9 @@ namespace Plync {
 			if (string.IsNullOrEmpty(Dir))
 				Dir = Environment.CurrentDirectory;
 
-			if (string.IsNullOrEmpty(Name)) {
-				Name = "";
-				for (int i = 0; i < Vid.Title.Length; i++)
-					if (!Path.GetInvalidPathChars().Contains(Vid.Title[i]))
-						Name += Vid.Title[i];
-			}
+			if (string.IsNullOrEmpty(Name))
+				Name = Vid.Title;
+			Name = NormalizeTitle(Name);
 
 			Downloader DLoader = null;
 			string SavePath = Path.Combine(Dir, Name + Ext);
@@ -193,7 +200,7 @@ namespace Plync {
 				Console.Write("Fetching \"{0}\" ... ", Videos[i].Title);
 				SaveCursor();
 
-				if (File.Exists(Path.Combine(Dir, Videos[i].Title + Ext)))
+				if (File.Exists(Path.Combine(Dir, NormalizeTitle(Videos[i].Title + Ext))))
 					WriteLineCol("SKIP", ConsoleColor.Yellow);
 				else {
 					try {
