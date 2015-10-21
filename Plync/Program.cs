@@ -58,8 +58,13 @@ namespace Plync {
 
 			if (string.IsNullOrEmpty(Dir))
 				Dir = Environment.CurrentDirectory;
-			if (string.IsNullOrEmpty(Name))
-				Name = Vid.Title;
+
+			if (string.IsNullOrEmpty(Name)) {
+				Name = "";
+				for (int i = 0; i < Vid.Title.Length; i++)
+					if (!Path.GetInvalidPathChars().Contains(Vid.Title[i]))
+						Name += Vid.Title[i];
+			}
 
 			Downloader DLoader = null;
 			string SavePath = Path.Combine(Dir, Name + Ext);
