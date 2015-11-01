@@ -49,7 +49,7 @@ namespace Plync {
 				return null;
 			string Name = "";
 			for (int i = 0; i < Title.Length; i++)
-				if (!Path.GetInvalidPathChars().Contains(Title[i]))
+				if (!Path.GetInvalidPathChars().Contains(Title[i]) && Title[i] != '\\' && Title[i] != '/')
 					Name += Title[i];
 			return Name;
 		}
@@ -176,14 +176,14 @@ namespace Plync {
 				Directory.CreateDirectory(Dir);
 			string[] ExistingFiles = Directory.GetFiles(Dir, "*" + Ext);
 
-			Console.WriteLine("Found {0} items", Videos.Length);
+			Console.WriteLine("Found {0} items in playlist", Videos.Length);
 			Console.WriteLine("Found {0} existing items", ExistingFiles.Length);
 			Console.WriteLine();
 
 			for (int i = 0; i < ExistingFiles.Length; i++) {
 				bool Exists = false;
 				for (int j = 0; j < Videos.Length; j++)
-					if (Videos[j].Title == Path.GetFileNameWithoutExtension(ExistingFiles[i]))
+					if (NormalizeTitle(Videos[j].Title) == Path.GetFileNameWithoutExtension(ExistingFiles[i]))
 						Exists = true;
 				if (!Exists) {
 					Console.Write("Removing \"{0}\" ... ", Path.GetFileNameWithoutExtension(ExistingFiles[i]));
@@ -195,15 +195,15 @@ namespace Plync {
 
 			int Downloaded = 0;
 			int Failed = 0;
+			int Skipped = 0;
 
 			for (int i = 0; i < Videos.Length; i++) {
-				Console.Write("Fetching \"{0}\" ... ", Videos[i].Title);
-				SaveCursor();
-
 				if (File.Exists(Path.Combine(Dir, NormalizeTitle(Videos[i].Title + Ext))))
-					WriteLineCol("SKIP", ConsoleColor.Yellow);
+					Skipped++;
 				else {
 					try {
+						Console.Write("Fetching \"{0}\" ... ", Videos[i].Title);
+						SaveCursor();
 						Download(Videos[i].Link, args[1], Videos[i].Title);
 						WriteLineCol("OKAY", ConsoleColor.Green);
 						Downloaded++;
@@ -214,6 +214,7 @@ namespace Plync {
 				}
 			}
 
+			Console.WriteLine("Skipped {0} items", Skipped);
 			Console.WriteLine("Fetched {0} items", Downloaded);
 			if (Failed > 0) {
 				Console.WriteLine("Failed to fetch {0} items", Failed);
