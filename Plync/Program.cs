@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using Gitdate;
 
 using YoutubeExtractor;
 using Google.Apis.Services;
@@ -144,6 +145,11 @@ namespace Plync {
 
 		static void Main(string[] args) {
 			Console.Title = "Plync";
+
+			Updater.Username = "cartman300";
+			Updater.Repository = "Plync";
+			Console.WriteLine("Version: {0}", Updater.Version);
+			Updater.CheckAndUpdate(false);
 
 			if (!(args.Length == 2 || (args.Length == 3 && args[2] == "/vid"))) {
 				Console.WriteLine("Usage: plync playlist directory [/vid]");

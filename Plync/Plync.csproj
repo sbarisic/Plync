@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Gitdate">
+      <HintPath>..\references\Gitdate.dll</HintPath>
+    </Reference>
     <Reference Include="Google.Apis">
       <HintPath>..\packages\Google.Apis.1.9.3\lib\net40\Google.Apis.dll</HintPath>
     </Reference>
