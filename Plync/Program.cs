@@ -149,7 +149,9 @@ namespace Plync {
 			Updater.Username = "cartman300";
 			Updater.Repository = "Plync";
 			Console.WriteLine("Version: {0}", Updater.Version);
-			Updater.CheckAndUpdate(false);
+			Updater.CheckAndUpdate((L) => {
+				Console.WriteLine("Downloading version {0}", L.tag_name);
+			}, false);
 
 			if (!(args.Length == 2 || (args.Length == 3 && args[2] == "/vid"))) {
 				Console.WriteLine("Usage: plync playlist directory [/vid]");
