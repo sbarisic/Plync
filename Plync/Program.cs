@@ -149,6 +149,7 @@ namespace Plync {
 			Updater.Username = "cartman300";
 			Updater.Repository = "Plync";
 			Console.WriteLine("Version: {0}", Updater.Version);
+			Console.WriteLine("Checking for updates");
 			Updater.CheckAndUpdate((L) => {
 				Console.WriteLine("Downloading version {0}", L.tag_name);
 			}, false);
@@ -174,8 +175,11 @@ namespace Plync {
 			try {
 				Videos = GetPlaylistItems(PlaylistID);
 				WriteLineCol("OKAY", ConsoleColor.Green);
-			} catch (Exception) {
+			} catch (Exception E) {
 				WriteLineCol("FAIL", ConsoleColor.Red);
+				Console.WriteLine(E.Message);
+				SaveCursor();
+				WriteLineCol("Make sure the playlist is either public or unlisted", ConsoleColor.Cyan);
 				Environment.Exit(-1);
 			}
 
@@ -197,7 +201,7 @@ namespace Plync {
 					Console.Write("Removing \"{0}\" ... ", Path.GetFileNameWithoutExtension(ExistingFiles[i]));
 					SaveCursor();
 					File.Delete(ExistingFiles[i]);
-					WriteLineCol("OKAY", ConsoleColor.Green);
+					WriteLineCol("OKAY", ConsoleColor.DarkYellow);
 				}
 			}
 
@@ -218,6 +222,14 @@ namespace Plync {
 					} catch (Exception E) {
 						WriteLineCol("FAIL", ConsoleColor.Red);
 						Failed++;
+
+						Console.Write("REASON: ");
+						if (E is YoutubeParseException)
+							Console.WriteLine("Failed to parse");
+						else if (E is NotSupportedException)
+							Console.WriteLine(E.Message);
+						else
+							Console.WriteLine("Unknown");
 					}
 				}
 			}
