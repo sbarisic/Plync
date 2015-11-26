@@ -207,7 +207,7 @@ namespace Plync {
 						Download(Videos[i].Link, args[1], Videos[i].Title);
 						WriteLineCol("OKAY", ConsoleColor.Green);
 						Downloaded++;
-					} catch (Exception) {
+					} catch (Exception E) {
 						WriteLineCol("FAIL", ConsoleColor.Red);
 						Failed++;
 					}
