@@ -49,9 +49,14 @@ namespace Plync {
 			if (Title == null)
 				return null;
 			string Name = "";
-			for (int i = 0; i < Title.Length; i++)
-				if (!Path.GetInvalidPathChars().Contains(Title[i]) && Title[i] != '\\' && Title[i] != '/')
-					Name += Title[i];
+			for (int i = 0; i < Title.Length; i++) {
+				if (!Path.GetInvalidPathChars().Contains(Title[i]) && Title[i] != '\\' && Title[i] != '/') {
+					if (Title[i] == ':')
+						Name += '=';
+					else
+						Name += Title[i];
+				}
+			}
 			return Name;
 		}
 
