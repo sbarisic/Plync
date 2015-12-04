@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using Gitdate;
+using System.Diagnostics;
 
 using YoutubeExtractor;
 using Google.Apis.Services;
@@ -21,6 +22,10 @@ namespace Plync {
 			Title = Snippet.Title;
 			while (Title.Contains("  "))
 				Title = Title.Replace("  ", " ");
+		}
+
+		public static implicit operator YTVideo(PlaylistItemSnippet Snippet) {
+			return new YTVideo(Snippet);
 		}
 
 		public override string ToString() {
@@ -48,6 +53,8 @@ namespace Plync {
 		static string NormalizeTitle(string Title) {
 			if (Title == null)
 				return null;
+			Title = Title.Replace("-", " - ").Replace("=", " - ");
+
 			string Name = "";
 			for (int i = 0; i < Title.Length; i++) {
 				if (!Path.GetInvalidPathChars().Contains(Title[i]) && Title[i] != '\\' && Title[i] != '/') {
@@ -57,6 +64,9 @@ namespace Plync {
 						Name += Title[i];
 				}
 			}
+
+			while (Name.Contains("  "))
+				Name = Name.Replace("  ", " ");
 			return Name;
 		}
 
@@ -107,7 +117,7 @@ namespace Plync {
 			DLoader.Execute();
 		}
 
-		static YTVideo[] GetPlaylistItems(string Playlist, string NextPageToken = null) {
+		static YTVideo[] GetPlaylistItems(string Playlist, ref int DeletedVideos, string NextPageToken = null) {
 			PlaylistItemsResource.ListRequest List = YTS.PlaylistItems.List("snippet");
 			List.PlaylistId = Playlist;
 			List.MaxResults = 50;
@@ -116,12 +126,18 @@ namespace Plync {
 			PlaylistItemListResponse Res = List.Execute();
 
 			List<YTVideo> VideoIDs = new List<YTVideo>();
-			for (int i = 0; i < Res.Items.Count; i++)
-				VideoIDs.Add(new YTVideo(Res.Items[i].Snippet));
+			for (int i = 0; i < Res.Items.Count; i++) {
+				PlaylistItemSnippet Snippet = Res.Items[i].Snippet;
+				if (Snippet.Thumbnails == null && Snippet.Title == "Deleted video") {
+					DeletedVideos++;
+					continue;
+				}
+				VideoIDs.Add(Snippet);
+			}
 
 			YTVideo[] Ret = VideoIDs.ToArray();
 			if (Res.NextPageToken != null)
-				return Concat(Ret, GetPlaylistItems(Playlist, Res.NextPageToken));
+				return Concat(Ret, GetPlaylistItems(Playlist, ref DeletedVideos, Res.NextPageToken));
 			return Ret;
 		}
 
@@ -151,6 +167,12 @@ namespace Plync {
 		static void Main(string[] args) {
 			Console.Title = "Plync";
 
+			int Downloaded = 0;
+			int Failed = 0;
+			int Skipped = 0;
+			int Invalid = 0;
+			int Removed = 0;
+
 			Updater.Username = "cartman300";
 			Updater.Repository = "Plync";
 			Console.WriteLine("Version: {0}", Updater.Version);
@@ -178,7 +200,7 @@ namespace Plync {
 			SaveCursor();
 			YTVideo[] Videos = null;
 			try {
-				Videos = GetPlaylistItems(PlaylistID);
+				Videos = GetPlaylistItems(PlaylistID, ref Invalid);
 				WriteLineCol("OKAY", ConsoleColor.Green);
 			} catch (Exception E) {
 				WriteLineCol("FAIL", ConsoleColor.Red);
@@ -193,7 +215,7 @@ namespace Plync {
 				Directory.CreateDirectory(Dir);
 			string[] ExistingFiles = Directory.GetFiles(Dir, "*" + Ext);
 
-			Console.WriteLine("Found {0} items in playlist", Videos.Length);
+			Console.WriteLine("Found {0} valid items in playlist", Videos.Length);
 			Console.WriteLine("Found {0} existing items", ExistingFiles.Length);
 			Console.WriteLine();
 
@@ -207,12 +229,9 @@ namespace Plync {
 					SaveCursor();
 					File.Delete(ExistingFiles[i]);
 					WriteLineCol("OKAY", ConsoleColor.DarkYellow);
+					Removed++;
 				}
 			}
-
-			int Downloaded = 0;
-			int Failed = 0;
-			int Skipped = 0;
 
 			for (int i = 0; i < Videos.Length; i++) {
 				if (File.Exists(Path.Combine(Dir, NormalizeTitle(Videos[i].Title + Ext))))
@@ -239,8 +258,13 @@ namespace Plync {
 				}
 			}
 
-			Console.WriteLine("Skipped {0} items", Skipped);
-			Console.WriteLine("Fetched {0} items", Downloaded);
+			Console.WriteLine();
+			Console.WriteLine("Invalid: {0}", Invalid);
+			Console.WriteLine("Removed: {0}", Removed);
+			Console.WriteLine("Fetched: {0}", Downloaded);
+			Console.WriteLine("Skipped: {0}", Skipped);
+			Console.WriteLine("Total items: {0}", Skipped + Downloaded);
+
 			if (Failed > 0) {
 				Console.WriteLine("Failed to fetch {0} items", Failed);
 				Environment.Exit(Failed);
