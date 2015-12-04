@@ -65,6 +65,9 @@ namespace Plync {
 				}
 			}
 
+			if (!char.IsUpper(Name[0]))
+				Name = char.ToUpper(Name[0]) + Name.Substring(1);
+
 			while (Name.Contains("  "))
 				Name = Name.Replace("  ", " ");
 			return Name;
@@ -238,7 +241,7 @@ namespace Plync {
 					Skipped++;
 				else {
 					try {
-						Console.Write("Fetching \"{0}\" ... ", Videos[i].Title);
+						Console.Write("Fetching \"{0}\" ... ", NormalizeTitle(Videos[i].Title));
 						SaveCursor();
 						Download(Videos[i].Link, args[1], Videos[i].Title);
 						WriteLineCol("OKAY", ConsoleColor.Green);
@@ -253,7 +256,7 @@ namespace Plync {
 						else if (E is NotSupportedException)
 							Console.WriteLine(E.Message);
 						else
-							Console.WriteLine("Unknown");
+							Console.WriteLine("Unknown, {0}\n{1}", E.GetType().Name, E.Message);
 					}
 				}
 			}
