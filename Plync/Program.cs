@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Gitdate;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 using YoutubeExtractor;
 using Google.Apis.Services;
@@ -53,7 +54,6 @@ namespace Plync {
 		static string NormalizeTitle(string Title) {
 			if (Title == null)
 				return null;
-			Title = Title.Replace("-", " - ").Replace("=", " - ");
 
 			string Name = "";
 			for (int i = 0; i < Title.Length; i++) {
@@ -68,9 +68,18 @@ namespace Plync {
 			if (!char.IsUpper(Name[0]))
 				Name = char.ToUpper(Name[0]) + Name.Substring(1);
 
+			Name = Regex.Replace(Name, @"\(([^\)]*)\)", "");
+			Name = Regex.Replace(Name, @"\[([^\]]*)\]", "");
+
+			Name = Name.Replace("=", "-");
+			while (Name.Contains("--"))
+				Name = Name.Replace("--", "-");
+			Name = Name.Replace("-", " - ");
 			while (Name.Contains("  "))
 				Name = Name.Replace("  ", " ");
-			return Name;
+
+			Name = Regex.Replace(Name, @"\s+", " ");
+			return Name.Trim();
 		}
 
 		static void Download(string Path, string Dir = null, string Name = null) {
@@ -167,7 +176,7 @@ namespace Plync {
 			Console.SetCursorPosition(Left, Top);
 		}
 
-		static void Main(string[] args) {
+		static int Main(string[] args) {
 			Console.Title = "Plync";
 
 			int Downloaded = 0;
@@ -178,28 +187,34 @@ namespace Plync {
 
 			Updater.Username = "cartman300";
 			Updater.Repository = "Plync";
-			Console.WriteLine("Version: {0}", Updater.Version);
-			Console.WriteLine("Checking for updates");
+			/*Console.WriteLine("Version: {0}", Updater.Version);
+			Console.WriteLine("Checking for updates");*/
 			Updater.CheckAndUpdate((L) => {
 				Console.WriteLine("Downloading version {0}", L.tag_name);
+				Console.WriteLine("The program will automatically update after it closes");
 			}, false);
 
 			if (!(args.Length == 2 || (args.Length == 3 && args[2] == "/vid"))) {
-				Console.WriteLine("Usage: plync playlist directory [/vid]");
+				Console.WriteLine("Usage:");
+				Console.WriteLine("plync playlist directory [/vid]");
+				Console.WriteLine("plync channel");
 				Environment.Exit(-1);
 			}
 
 			Video = (args.Length == 3 && args[2] == "/vid");
 			if (Video) {
 				Ext = ".mp4";
-				Console.WriteLine("Fetching audio and video");
+				//Console.WriteLine("Fetching audio and video");
 			} else {
 				Ext = ".mp3";
-				Console.WriteLine("Fetching audio only");
+				//Console.WriteLine("Fetching audio only");
 			}
 
 			string PlaylistID = GetPlaylistID(args[0]);
-			Console.Write("Fetching items from {0} ... ", PlaylistID);
+			Console.Write("Fetching items [audio");
+			if (Video)
+				Console.Write(" and video");
+			Console.Write("] from playlist ... ", PlaylistID);
 			SaveCursor();
 			YTVideo[] Videos = null;
 			try {
@@ -220,7 +235,14 @@ namespace Plync {
 
 			Console.WriteLine("Found {0} valid items in playlist", Videos.Length);
 			Console.WriteLine("Found {0} existing items", ExistingFiles.Length);
-			Console.WriteLine();
+
+			List<string> NormalizedNames = new List<string>();
+			for (int i = 0; i < Videos.Length; i++) {
+				string Normalized = NormalizeTitle(Videos[i].Title);
+				if (NormalizedNames.Contains(Normalized))
+					WriteLineCol(string.Format("Collision found \"{0}\"", Normalized), ConsoleColor.Magenta);
+				NormalizedNames.Add(Normalized);
+			}
 
 			for (int i = 0; i < ExistingFiles.Length; i++) {
 				bool Exists = false;
@@ -261,17 +283,9 @@ namespace Plync {
 				}
 			}
 
-			Console.WriteLine();
-			Console.WriteLine("Invalid: {0}", Invalid);
-			Console.WriteLine("Removed: {0}", Removed);
-			Console.WriteLine("Fetched: {0}", Downloaded);
-			Console.WriteLine("Skipped: {0}", Skipped);
-			Console.WriteLine("Total items: {0}", Skipped + Downloaded);
-
-			if (Failed > 0) {
-				Console.WriteLine("Failed to fetch {0} items", Failed);
-				Environment.Exit(Failed);
-			}
+			Console.WriteLine("INV {0} REM {1} FCH {2} SKP {3} FLR {4}", Invalid, Removed, Downloaded, Skipped, Failed);
+			Console.WriteLine("Total: {0}", Skipped + Downloaded);
+			return Failed;
 		}
 	}
 }
