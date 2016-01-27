@@ -153,6 +153,25 @@ namespace Plync {
 			return Ret;
 		}
 
+		static Tuple<string, string>[] GetPlaylists(string Channel, string NextPageToken = null) {
+			PlaylistsResource.ListRequest List = YTS.Playlists.List("snippet");
+			List.ChannelId = Channel;
+			List.MaxResults = 50;
+
+			if (NextPageToken != null)
+				List.PageToken = NextPageToken;
+			PlaylistListResponse Res = List.Execute();
+
+			List<Tuple<string, string>> PlaylistIDs = new List<Tuple<string, string>>();
+			for (int i = 0; i < Res.Items.Count; i++)
+				PlaylistIDs.Add(new Tuple<string, string>(Res.Items[i].Snippet.Title, Res.Items[i].Id));
+
+			Tuple<string, string>[] Ret = PlaylistIDs.ToArray();
+			if (Res.NextPageToken != null)
+				return Concat(Ret, GetPlaylists(Channel, Res.NextPageToken));
+			return Ret;
+		}
+
 		static string GetPlaylistID(string Link) {
 			if (Link.Contains("list="))
 				Link = Link.Substring(Link.IndexOf("list=") + 5).Split('&')[0];
@@ -197,9 +216,19 @@ namespace Plync {
 			if (!(args.Length == 2 || (args.Length == 3 && args[2] == "/vid"))) {
 				Console.WriteLine("Usage:");
 				Console.WriteLine("plync playlist directory [/vid]");
-				Console.WriteLine("plync channel");
+				Console.WriteLine("plync /playlists channel");
 				Environment.Exit(-1);
 			}
+
+			if (args.Length == 2 && args[0] == "/playlists") {
+				string Channel = args[1];
+				Tuple<string, string>[] Playlists = GetPlaylists(Channel);
+				for (int i = 0; i < Playlists.Length; i++) {
+					Console.WriteLine("plync {0} {1}", Playlists[i].Item2, NormalizeTitle(Playlists[i].Item1));
+				}
+				Environment.Exit(0);
+			}
+
 
 			Video = (args.Length == 3 && args[2] == "/vid");
 			if (Video) {
