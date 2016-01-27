@@ -153,6 +153,11 @@ namespace Plync {
 			return Ret;
 		}
 
+		static YTVideo[] GetPlaylistItems(string Playlist) {
+			int Del = 0;
+			return GetPlaylistItems(Playlist, ref Del);
+		}
+
 		static Tuple<string, string>[] GetPlaylists(string Channel, string NextPageToken = null) {
 			PlaylistsResource.ListRequest List = YTS.Playlists.List("snippet");
 			List.ChannelId = Channel;
@@ -224,7 +229,8 @@ namespace Plync {
 				string Channel = args[1];
 				Tuple<string, string>[] Playlists = GetPlaylists(Channel);
 				for (int i = 0; i < Playlists.Length; i++) {
-					Console.WriteLine("plync {0} {1}", Playlists[i].Item2, NormalizeTitle(Playlists[i].Item1));
+					Console.WriteLine("{0} - {1} items", Playlists[i].Item1, GetPlaylistItems(Playlists[i].Item2).Length);
+					Console.Error.WriteLine("plync {0} \"{1}\"", Playlists[i].Item2, NormalizeTitle(Playlists[i].Item1));
 				}
 				Environment.Exit(0);
 			}
