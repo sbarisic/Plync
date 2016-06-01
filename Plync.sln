@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plync", "Plync\Plync.csproj", "{E2634217-CDA4-44BF-9639-F98307F3C942}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlyncGUI", "PlyncGUI\PlyncGUI.csproj", "{24CF9437-E13E-43E4-966E-D39EED97660E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plync2", "Plync2\Plync2.csproj", "{6CB19DC2-D6E0-46ED-85FB-7F27854D98A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,6 +23,10 @@ Global
 		{24CF9437-E13E-43E4-966E-D39EED97660E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24CF9437-E13E-43E4-966E-D39EED97660E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24CF9437-E13E-43E4-966E-D39EED97660E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CB19DC2-D6E0-46ED-85FB-7F27854D98A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CB19DC2-D6E0-46ED-85FB-7F27854D98A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CB19DC2-D6E0-46ED-85FB-7F27854D98A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CB19DC2-D6E0-46ED-85FB-7F27854D98A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
