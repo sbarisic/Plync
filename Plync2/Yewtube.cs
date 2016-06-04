@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Web;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Net;
 using System.IO;
+using System.Text.RegularExpressions;
 using Libraria.Serialization;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
@@ -69,6 +71,16 @@ namespace Plync2 {
 			return Ret;
 		}
 
+		public static string GetPlaylistName(string Playlist) {
+			Playlist = GetPlaylistID(Playlist);
+
+			string Src = DownloadString("http://www.youtube.com/playlist?list=" + Playlist);
+			string Title = Regex.Match(Src, @"\<title\b[^>]*\>\s*(?<Title>[\s\S]*?)\</title\>",
+				RegexOptions.IgnoreCase).Groups["Title"].Value;
+
+			return TitleToFileName(Title.Replace("- YouTube", ""));
+		}
+
 		public static YTVideo[] GetPlaylistItems(string Playlist) {
 			Playlist = GetPlaylistID(Playlist);
 
@@ -76,7 +88,7 @@ namespace Plync2 {
 			return GetPlaylistItems(Playlist, ref Deleted);
 		}
 
-		public static void GetVideoData(string VideoURL, out string Title, out string Link) {
+		/*public static void GetVideoData(string VideoURL, out string Title, out string Link) {
 			VideoURL = "http://www.youtubeinmp3.com/fetch/?format=JSON&video=" + VideoURL;
 
 			using (WebClient WC = new WebClient()) {
@@ -84,39 +96,79 @@ namespace Plync2 {
 				Link = Ret["link"];
 				Title = Ret["title"];
 			}
+		}*/
+
+		public static string DownloadString(string URL) {
+			return Encoding.UTF8.GetString(DownloadData(URL, (P) => { }));
+		}
+
+		public static void GetVideoData(string VideoURL, out string Title, out string Link) {
+			const string Site = "http://www.youtubeinmp3.com";
+			string ButtonURL = Site + "/widget/button/?video=" + VideoURL;
+			string ButtonSrc = DownloadString(ButtonURL);
+
+			Link = ButtonSrc.Substring(ButtonSrc.IndexOf("downloadButton"));
+			for (int i = 0; i < 2; i++)
+				Link = Link.Substring(Link.IndexOf('\"') + 1);
+			Link = HttpUtility.HtmlDecode(Site + Link.Substring(0, Link.IndexOf('\"')));
+
+			Title = ButtonSrc.Substring(ButtonSrc.IndexOf("buttonTitle"));
+			Title = Title.Substring(Title.IndexOf('>') + 1);
+			Title = HttpUtility.HtmlDecode(Title.Substring(0, Title.IndexOf("</div></div>")));
 		}
 
 		// TODO: Optimize
 		public static string TitleToFileName(string Title) {
+			Title = Title.Trim();
+
 			char[] InvChars = Path.GetInvalidFileNameChars();
 			List<char> TitleNew = new List<char>();
 
-			foreach (var C in Title)
-				if (!InvChars.Contains(C))
+			foreach (var C in Title) {
+				if (C == '.') {
+				} else if (!InvChars.Contains(C))
 					TitleNew.Add(C);
+			}
 
-			return new string(TitleNew.ToArray()) + ".mp3";
+			return new string(TitleNew.ToArray());
 		}
 
-		public static void DownloadTo(string Link, string File, Action<int> ProgressChanged, Action OnCompleted) {
+		public static byte[] DownloadData(string Link, Action<int> ProgressChanged) {
 			bool Completed = false;
-
-			string Dir = Path.GetDirectoryName(File);
-			if (!Directory.Exists(Dir))
-				Directory.CreateDirectory(Dir);
+			byte[] Data = null;
 
 			using (WebClient WC = new WebClient()) {
 				WC.DownloadProgressChanged += (S, E) => ProgressChanged(E.ProgressPercentage);
-				WC.DownloadFileCompleted += (S, E) => {
-					OnCompleted();
+				WC.DownloadDataCompleted += (S, E) => {
+					ProgressChanged(100);
+					Data = E.Result;
 					Completed = true;
 				};
 
-				WC.DownloadFileAsync(new Uri(Link), File);
+				WC.DownloadDataAsync(new Uri(Link));
 
 				while (!Completed)
 					Thread.Sleep(10);
 			}
+
+			return Data;
+		}
+
+		public static void DownloadTo(string Link, string FileName, Action<int> ProgressChanged) {
+			string Dir = Path.GetDirectoryName(FileName);
+			if (!Directory.Exists(Dir))
+				Directory.CreateDirectory(Dir);
+
+			byte[] Data = DownloadData(Link, ProgressChanged);
+			string Magic = "";
+			if (Data.Length >= 3)
+				Magic = new string(new char[] { (char)Data[0], (char)Data[1], (char)Data[2] });
+
+			if (Magic != "ID3") {
+				Thread.Sleep(100);
+				Data = DownloadData(Link, ProgressChanged);
+			}
+			File.WriteAllBytes(FileName, Data);
 		}
 	}
 }

@@ -20,7 +20,7 @@ namespace Plync2 {
 
 			Out.WordWrap = false;
 			OutFolder.Text = Path.Combine(Application.StartupPath, "Music");
-			Program.Printer = (E) => Print("Info", E);
+			Program.Printer = (E) => Println("Info", E);
 		}
 
 		public void Write(string Str, Color Clr) {
@@ -34,12 +34,20 @@ namespace Plync2 {
 		}
 
 		public void Print(string Msg) {
-			Write(Msg + "\n", Color.Black);
+			Write(Msg, Color.Black);
+		}
+
+		public void Println(string Msg) {
+			Print(Msg + "\n");
 		}
 
 		public void Print(string Info, string Msg) {
 			Write("[" + Info + "]", Color.DarkGreen);
 			Print(" " + Msg);
+		}
+
+		public void Println(string Info, string Msg) {
+			Print(Info, Msg + "\n");
 		}
 
 		public void SetProgress(int P) {
@@ -56,30 +64,32 @@ namespace Plync2 {
 				string Title, Link;
 				Yewtube.GetVideoData(Video, out Title, out Link);
 
-				string FileName = Path.Combine(Location, Yewtube.TitleToFileName(Title));
+				string FileName = Path.Combine(Location, Yewtube.TitleToFileName(Title) + ".mp3");
 				if (!File.Exists(FileName)) {
-					Print("Downloading", FileName);
-					Yewtube.DownloadTo(Link, FileName, SetProgress, () => SetProgress(100));
+					Println("Downloading", FileName);
+					Yewtube.DownloadTo(Link, FileName, SetProgress);
+					// Println(" - Done");
 				} else
-					Print("Skipping", FileName);
+					Println("Skipping", FileName);
 			});
 		}
 
 		public void DownloadPlaylist(string Playlist, string Location) {
 			Program.AddJob(() => {
+				string PlaylistName = Yewtube.GetPlaylistName(Playlist);
 				string[] Links = Yewtube.GetPlaylistItems(Playlist).Select((YTV) => YTV.Link).ToArray();
 				foreach (var Link in Links)
-					DownloadVideo(Link, Location);
+					DownloadVideo(Link, Path.Combine(Location, PlaylistName));
 			});
 		}
 
 		private void DownloadPlaylistBtn_Click(object sender, EventArgs e) {
-			Print("Job", string.Format("Playlist {0} to {1}", Input.Text, OutFolder.Text));
+			Println("Job", string.Format("Playlist {0} to {1}", Input.Text, OutFolder.Text));
 			DownloadPlaylist(Input.Text, OutFolder.Text);
 		}
 
 		private void DownloadVideoBtn_Click(object sender, EventArgs e) {
-			Print("Job", string.Format("Video {0} to {1}", Input.Text, OutFolder.Text));
+			Println("Job", string.Format("Video {0} to {1}", Input.Text, OutFolder.Text));
 			DownloadVideo(Input.Text, OutFolder.Text);
 		}
 	}
