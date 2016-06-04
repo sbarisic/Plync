@@ -13,6 +13,7 @@ using System.Windows.Forms;
 namespace Plync2 {
 	public partial class Plync2Frm : Form {
 		Queue<Action> JobQueue;
+		SelectPlaylists PlaylistSelector;
 
 		public Plync2Frm() {
 			InitializeComponent();
@@ -30,6 +31,8 @@ namespace Plync2 {
 				Out.SelectionColor = _Clr;
 				Out.AppendText(_Str);
 				Out.SelectionColor = Out.ForeColor;
+				Out.SelectionStart = Out.Text.Length;
+				Out.ScrollToCaret();
 			}), Str, Clr);
 		}
 
@@ -74,13 +77,12 @@ namespace Plync2 {
 			});
 		}
 
-		public void DownloadPlaylist(string Playlist, string Location) {
-			Program.AddJob(() => {
-				string PlaylistName = Yewtube.GetPlaylistName(Playlist);
-				string[] Links = Yewtube.GetPlaylistItems(Playlist).Select((YTV) => YTV.Link).ToArray();
-				foreach (var Link in Links)
-					DownloadVideo(Link, Path.Combine(Location, PlaylistName));
-			});
+		public void DownloadPlaylist(string Playlist, string Location, string PlaylistName = null) {
+			if (PlaylistName == null)
+				PlaylistName = Yewtube.GetPlaylistName(Playlist);
+			string[] Links = Yewtube.GetPlaylistItems(Playlist).Select((YTV) => YTV.Link).ToArray();
+			foreach (var Link in Links)
+				DownloadVideo(Link, Path.Combine(Location, PlaylistName));
 		}
 
 		private void DownloadPlaylistBtn_Click(object sender, EventArgs e) {
@@ -91,6 +93,18 @@ namespace Plync2 {
 		private void DownloadVideoBtn_Click(object sender, EventArgs e) {
 			Println("Job", string.Format("Video {0} to {1}", Input.Text, OutFolder.Text));
 			DownloadVideo(Input.Text, OutFolder.Text);
+		}
+
+		private void SelectPlaylistsBtn_Click(object sender, EventArgs e) {
+			if (PlaylistSelector != null)
+				return;
+
+			PlaylistSelector = new SelectPlaylists();
+			PlaylistSelector.FormClosed += (S, E) => PlaylistSelector = null;
+			if (PlaylistSelector.Init(this, Input.Text.Trim(), OutFolder.Text))
+				PlaylistSelector.Show();
+			else
+				PlaylistSelector = null;
 		}
 	}
 }

@@ -47,6 +47,16 @@ namespace Plync2 {
 			return Link;
 		}
 
+		static string GetChannelID(string Link) {
+			const string Chan = "channel/";
+
+			if (Link.Contains(Chan))
+				Link = Link.Substring(Link.IndexOf(Chan) + Chan.Length);
+			if (Link.Contains('/'))
+				Link = Link.Substring(0, Link.IndexOf('/'));
+			return Link;
+		}
+
 		public static YTVideo[] GetPlaylistItems(string Playlist, ref int DeletedVideos, string NextPageToken = null) {
 			PlaylistItemsResource.ListRequest List = YTS.PlaylistItems.List("snippet");
 			List.PlaylistId = Playlist;
@@ -68,6 +78,27 @@ namespace Plync2 {
 			YTVideo[] Ret = VideoIDs.ToArray();
 			if (Res.NextPageToken != null)
 				return Concat(Ret, GetPlaylistItems(Playlist, ref DeletedVideos, Res.NextPageToken));
+			return Ret;
+		}
+
+		public static Tuple<string, string>[] GetPlaylists(string Channel, string NextPageToken = null) {
+			Channel = GetChannelID(Channel);
+
+			PlaylistsResource.ListRequest List = YTS.Playlists.List("snippet");
+			List.ChannelId = Channel;
+			List.MaxResults = 50;
+
+			if (NextPageToken != null)
+				List.PageToken = NextPageToken;
+			PlaylistListResponse Res = List.Execute();
+
+			List<Tuple<string, string>> PlaylistIDs = new List<Tuple<string, string>>();
+			for (int i = 0; i < Res.Items.Count; i++)
+				PlaylistIDs.Add(new Tuple<string, string>(TitleToFileName(Res.Items[i].Snippet.Title), Res.Items[i].Id));
+
+			Tuple<string, string>[] Ret = PlaylistIDs.ToArray();
+			if (Res.NextPageToken != null)
+				return Concat(Ret, GetPlaylists(Channel, Res.NextPageToken));
 			return Ret;
 		}
 

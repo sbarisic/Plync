@@ -23,6 +23,7 @@
 		/// the contents of this method with the code editor.
 		/// </summary>
 		private void InitializeComponent() {
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Plync2Frm));
 			this.Out = new System.Windows.Forms.RichTextBox();
 			this.label1 = new System.Windows.Forms.Label();
 			this.Input = new System.Windows.Forms.TextBox();
@@ -32,6 +33,7 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.ProgressBar = new System.Windows.Forms.ProgressBar();
 			this.ProgressLabel = new System.Windows.Forms.Label();
+			this.SelectPlaylistsBtn = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// Out
@@ -125,11 +127,22 @@
 			this.ProgressLabel.TabIndex = 8;
 			this.ProgressLabel.Text = "100%";
 			// 
+			// SelectPlaylistsBtn
+			// 
+			this.SelectPlaylistsBtn.Location = new System.Drawing.Point(238, 64);
+			this.SelectPlaylistsBtn.Name = "SelectPlaylistsBtn";
+			this.SelectPlaylistsBtn.Size = new System.Drawing.Size(166, 23);
+			this.SelectPlaylistsBtn.TabIndex = 9;
+			this.SelectPlaylistsBtn.Text = "Select playlists from channel";
+			this.SelectPlaylistsBtn.UseVisualStyleBackColor = true;
+			this.SelectPlaylistsBtn.Click += new System.EventHandler(this.SelectPlaylistsBtn_Click);
+			// 
 			// Plync2Frm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(704, 460);
+			this.Controls.Add(this.SelectPlaylistsBtn);
 			this.Controls.Add(this.ProgressLabel);
 			this.Controls.Add(this.ProgressBar);
 			this.Controls.Add(this.label2);
@@ -139,10 +152,8 @@
 			this.Controls.Add(this.Input);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.Out);
-			this.MaximizeBox = false;
-			this.MinimizeBox = false;
+			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Name = "Plync2Frm";
-			this.ShowIcon = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Plync 2";
 			this.ResumeLayout(false);
@@ -161,6 +172,7 @@
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.ProgressBar ProgressBar;
 		private System.Windows.Forms.Label ProgressLabel;
+		private System.Windows.Forms.Button SelectPlaylistsBtn;
 	}
 }
 
